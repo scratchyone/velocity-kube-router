@@ -1,0 +1,14 @@
+# Maven directories
+target/
+
+# Eclipse files
+.classpath
+.factorypath
+.project
+.settings/
+
+# IntelliJ IDEA files
+.idea/
+
+build
+jenv.fish
