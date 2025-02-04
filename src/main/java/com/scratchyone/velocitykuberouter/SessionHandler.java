@@ -81,8 +81,8 @@ public class SessionHandler implements LimboSessionHandler {
     this.player.setGameMode(GameMode.SPECTATOR);
     server.setWorldTime(8);
     // this.player
-    //     .getScheduledExecutor()
-    //     .schedule(this::tick, CONFIG.checkInterval, TimeUnit.MILLISECONDS);
+    // .getScheduledExecutor()
+    // .schedule(this::tick, CONFIG.checkInterval, TimeUnit.MILLISECONDS);
     this.player
         .getProxyPlayer()
         .showTitle(
@@ -90,13 +90,13 @@ public class SessionHandler implements LimboSessionHandler {
                 Component.text("Server loading...").color(TextColor.fromHexString("#5234eb")),
                 Component.text("")));
     // this.player
-    //     .getProxyPlayer()
-    //     .showBossBar(
-    //         BossBar.bossBar(
-    //             Component.text("Server is starting... Please wait..."),
-    //             0.5F,
-    //             Color.PURPLE,
-    //             Overlay.NOTCHED_6));
+    // .getProxyPlayer()
+    // .showBossBar(
+    // BossBar.bossBar(
+    // Component.text("Server is starting... Please wait..."),
+    // 0.5F,
+    // Color.PURPLE,
+    // Overlay.NOTCHED_6));
 
     this.player.getScheduledExecutor().schedule(this::tick, 1000, TimeUnit.MILLISECONDS);
   }

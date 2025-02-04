@@ -39,12 +39,8 @@ import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.slf4j.Logger;
 
-@Plugin(
-    id = "velocitykuberouter",
-    name = "Velocity Kube Router",
-    version = "0.1.0-SNAPSHOT",
-    description = "Managing routing and autoscaling of Minecraft servers on K8S",
-    authors = {"scratchyone"})
+@Plugin(id = "velocitykuberouter", name = "Velocity Kube Router", version = "0.1.0-SNAPSHOT", description = "Managing routing and autoscaling of Minecraft servers on K8S", authors = {
+    "scratchyone" })
 public class KubeRouterVelocityPlugin {
 
   private final ProxyServer server;
@@ -62,8 +58,8 @@ public class KubeRouterVelocityPlugin {
 
   private final Path configPath;
 
-  public static final PlainTextComponentSerializer SERIALIZER =
-      PlainTextComponentSerializer.builder().flattener(ComponentFlattener.basic()).build();
+  public static final PlainTextComponentSerializer SERIALIZER = PlainTextComponentSerializer.builder()
+      .flattener(ComponentFlattener.basic()).build();
 
   @Inject
   public KubeRouterVelocityPlugin(
@@ -75,13 +71,11 @@ public class KubeRouterVelocityPlugin {
     this.server = server;
     this.logger = logger;
     this.pingCache = new HashMap<>();
-    this.factory =
-        (LimboFactory)
-            this.server
-                .getPluginManager()
-                .getPlugin("limboapi")
-                .flatMap(PluginContainer::getInstance)
-                .orElseThrow();
+    this.factory = (LimboFactory) this.server
+        .getPluginManager()
+        .getPlugin("limboapi")
+        .flatMap(PluginContainer::getInstance)
+        .orElseThrow();
 
     this.configPath = dataDirectory.resolve("config.yml");
   }
@@ -91,8 +85,7 @@ public class KubeRouterVelocityPlugin {
     // Do some operation demanding access to the Velocity API here.
     // For instance, we could register an event:
     // server.getEventManager().register(this, new PluginListener());
-    VirtualWorld world =
-        this.factory.createVirtualWorld(Dimension.OVERWORLD, 0.0, 100.0, 0.0, 0.0F, 0.0F);
+    VirtualWorld world = this.factory.createVirtualWorld(Dimension.OVERWORLD, 0.0, 100.0, 0.0, 0.0F, 0.0F);
     this.limbo = this.factory.createLimbo(world);
 
     CONFIG.reload(this.configPath);
@@ -105,15 +98,13 @@ public class KubeRouterVelocityPlugin {
 
     for (Service service : matchingServices.getItems()) {
       if (service.getMetadata().getAnnotations() != null
-          && service.getMetadata().getAnnotations().get("mc-router.itzg.me/externalServerName")
-              != null) {
-        String virtualHost =
-            service.getMetadata().getAnnotations().get("mc-router.itzg.me/externalServerName");
+          && service.getMetadata().getAnnotations().get("mc-router.itzg.me/externalServerName") != null) {
+        String virtualHost = service.getMetadata().getAnnotations().get("mc-router.itzg.me/externalServerName");
         ServerPing cachedPing = pingCache.get(virtualHost);
-        Optional<RegisteredServer> registeredServer =
-            getRegisteredServerFromVirtualHost(virtualHost);
+        Optional<RegisteredServer> registeredServer = getRegisteredServerFromVirtualHost(virtualHost);
         if (cachedPing == null && registeredServer.isPresent()) {
-          // Hmm, we have a server registered with us but no ping cached for it. Let's cache one
+          // Hmm, we have a server registered with us but no ping cached for it. Let's
+          // cache one
           logger.info(
               "{} is registered but doesn't have a cached ping, attempting to ping it to cache one"
                   + " now...",
@@ -124,7 +115,8 @@ public class KubeRouterVelocityPlugin {
                   PingOptions.builder().version(ProtocolVersion.MAXIMUM_VERSION).virtualHost(virtualHost).build())
               .thenAccept(
                   ping -> {
-                    if (CONFIG.debug) logger.info("Ping Result: {}", ping);
+                    if (CONFIG.debug)
+                      logger.info("Ping Result: {}", ping);
                     pingCache.put(virtualHost, ping);
                   })
               .exceptionally(
@@ -133,9 +125,8 @@ public class KubeRouterVelocityPlugin {
                       logger.info("Ping to target server failed: {}", e.getMessage());
                     // The server didn't respond to our ping, lets try to start it up
 
-                    Optional<StatefulSet> statefulSetOpt =
-                        getServiceFromVirtualHost(virtualHost)
-                            .flatMap((v) -> getStatefulSetFromService(v));
+                    Optional<StatefulSet> statefulSetOpt = getServiceFromVirtualHost(virtualHost)
+                        .flatMap((v) -> getStatefulSetFromService(v));
 
                     if (statefulSetOpt.isPresent()) {
                       StatefulSet statefulSet = statefulSetOpt.get();
@@ -170,7 +161,8 @@ public class KubeRouterVelocityPlugin {
       if (service.getMetadata().getAnnotations() != null
           && virtualHost.equals(
               service.getMetadata().getAnnotations().get("mc-router.itzg.me/externalServerName"))) {
-        if (CONFIG.debug) logger.info("Matching service: {}", service);
+        if (CONFIG.debug)
+          logger.info("Matching service: {}", service);
 
         return Optional.ofNullable(service);
       }
@@ -206,8 +198,7 @@ public class KubeRouterVelocityPlugin {
               .orElseGet(
                   () -> {
                     // Register the server dynamically
-                    RegisteredServer newServer =
-                        server.registerServer(new ServerInfo(targetServerName, targetAddress));
+                    RegisteredServer newServer = server.registerServer(new ServerInfo(targetServerName, targetAddress));
                     if (CONFIG.debug)
                       logger.info(
                           "Registering new server {} at {}: {}",
@@ -223,10 +214,10 @@ public class KubeRouterVelocityPlugin {
 
   @Subscribe
   public void onServerPreConnect(ServerPreConnectEvent event) {
-    String virtualHost =
-        event.getPlayer().getVirtualHost().map((v) -> v.getHostString()).orElse("");
+    String virtualHost = event.getPlayer().getVirtualHost().map((v) -> v.getHostString()).orElse("");
 
-    if (CONFIG.debug) logger.info("Player connecting to server at {}", virtualHost);
+    if (CONFIG.debug)
+      logger.info("Player connecting to server at {}", virtualHost);
 
     getRegisteredServerFromVirtualHost(virtualHost)
         .ifPresent(
@@ -237,20 +228,22 @@ public class KubeRouterVelocityPlugin {
 
   @Subscribe
   public void onProxyPing(ProxyPingEvent event) {
-    if (CONFIG.debug) logger.info("Ping event: {}", event);
+    if (CONFIG.debug)
+      logger.info("Ping event: {}", event);
 
     Optional<InetSocketAddress> virtualHostOpt = event.getConnection().getVirtualHost();
     if (virtualHostOpt.isPresent()) {
       String virtualHost = virtualHostOpt.get().getHostString();
 
-      if (CONFIG.debug) logger.info("Ping handler: Virtualhost is {}", virtualHost);
+      if (CONFIG.debug)
+        logger.info("Ping handler: Virtualhost is {}", virtualHost);
 
-      Optional<RegisteredServer> registeredServerOpt =
-          getRegisteredServerFromVirtualHost(virtualHost);
+      Optional<RegisteredServer> registeredServerOpt = getRegisteredServerFromVirtualHost(virtualHost);
       if (registeredServerOpt.isPresent()) {
         RegisteredServer server = registeredServerOpt.get();
 
-        if (CONFIG.debug) logger.info("Ping handler: Found target server!");
+        if (CONFIG.debug)
+          logger.info("Ping handler: Found target server!");
 
         CompletableFuture<Void> pingFuture = server
             .ping(
@@ -288,13 +281,16 @@ public class KubeRouterVelocityPlugin {
         try {
           pingFuture.get(); // Wait for the ping future to complete
         } catch (InterruptedException | ExecutionException e) {
-          if (CONFIG.debug) logger.error("Error waiting for ping result", e);
+          if (CONFIG.debug)
+            logger.error("Error waiting for ping result", e);
         }
       } else {
-        if (CONFIG.debug) logger.info("Couldn't get server...");
+        if (CONFIG.debug)
+          logger.info("Couldn't get server...");
       }
     } else {
-      if (CONFIG.debug) logger.info("No virtual host present.");
+      if (CONFIG.debug)
+        logger.info("No virtual host present.");
     }
   }
 
@@ -303,24 +299,23 @@ public class KubeRouterVelocityPlugin {
     logger.info("registering...");
     event.setOnKickCallback(
         kickEvent -> {
-          Optional<String> virtualHost =
-              event.getPlayer().getVirtualHost().map((v) -> v.getHostString());
-          Component kickReason =
-              kickEvent.getServerKickReason().isPresent()
-                  ? kickEvent.getServerKickReason().get()
-                  : Component.empty();
-          String kickMessage =
-              Objects.requireNonNullElse(SERIALIZER.serialize(kickReason), "unknown");
+          Optional<String> virtualHost = event.getPlayer().getVirtualHost().map((v) -> v.getHostString());
+          Component kickReason = kickEvent.getServerKickReason().isPresent()
+              ? kickEvent.getServerKickReason().get()
+              : Component.empty();
+          String kickMessage = Objects.requireNonNullElse(SERIALIZER.serialize(kickReason), "unknown");
 
-          if (CONFIG.debug) logger.info("Kick reason: {}", kickReason);
-          if (CONFIG.debug) logger.info("Kick message: {}", kickMessage.isEmpty());
+          if (CONFIG.debug)
+            logger.info("Kick reason: {}", kickReason);
+          if (CONFIG.debug)
+            logger.info("Kick message: {}", kickMessage.isEmpty());
 
           if (kickMessage.isEmpty() && virtualHost.isPresent()) {
-            if (CONFIG.debug) logger.info("VirtualHost is present.");
+            if (CONFIG.debug)
+              logger.info("VirtualHost is present.");
 
-            Optional<StatefulSet> statefulSetOpt =
-                getServiceFromVirtualHost(virtualHost.get())
-                    .flatMap((v) -> getStatefulSetFromService(v));
+            Optional<StatefulSet> statefulSetOpt = getServiceFromVirtualHost(virtualHost.get())
+                .flatMap((v) -> getStatefulSetFromService(v));
 
             if (statefulSetOpt.isPresent()) {
               StatefulSet statefulSet = statefulSetOpt.get();
@@ -333,8 +328,7 @@ public class KubeRouterVelocityPlugin {
                 k8s.resource(statefulSet).scale(1);
               }
 
-              Optional<RegisteredServer> registeredServerOpt =
-                  getRegisteredServerFromVirtualHost(virtualHost.get());
+              Optional<RegisteredServer> registeredServerOpt = getRegisteredServerFromVirtualHost(virtualHost.get());
               if (registeredServerOpt.isPresent()) {
                 RegisteredServer server = registeredServerOpt.get();
                 logger.info("Sending player to limbo...");
@@ -342,8 +336,8 @@ public class KubeRouterVelocityPlugin {
                     kickEvent.getPlayer(), new SessionHandler(logger, this, server));
               }
               // KickedFromServerEvent.Notify notify =
-              //     KickedFromServerEvent.Notify.create(
-              //         Component.text("Waiting for server to start..."));
+              // KickedFromServerEvent.Notify.create(
+              // Component.text("Waiting for server to start..."));
               // kickEvent.setResult(notify);
               return true;
             }
