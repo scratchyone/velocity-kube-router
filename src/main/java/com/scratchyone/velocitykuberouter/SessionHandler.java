@@ -44,8 +44,9 @@ public class SessionHandler implements LimboSessionHandler {
 
     this.server
         .ping(
-            PingOptions.builder().build(),
-            this.player.getProxyPlayer().getVirtualHost().map((h) -> h.getHostString()).orElse(""))
+            PingOptions.builder()
+                .virtualHost(this.player.getProxyPlayer().getVirtualHost().map((h) -> h.getHostString()).orElse(""))
+                .build())
         .whenComplete(
             (ping, exception) -> {
               logger.info("Pinged: {}, {}", ping, exception);

@@ -121,8 +121,7 @@ public class KubeRouterVelocityPlugin {
           registeredServer
               .get()
               .ping(
-                  PingOptions.builder().version(ProtocolVersion.MAXIMUM_VERSION).build(),
-                  virtualHost)
+                  PingOptions.builder().version(ProtocolVersion.MAXIMUM_VERSION).virtualHost(virtualHost).build())
               .thenAccept(
                   ping -> {
                     if (CONFIG.debug) logger.info("Ping Result: {}", ping);
@@ -253,39 +252,38 @@ public class KubeRouterVelocityPlugin {
 
         if (CONFIG.debug) logger.info("Ping handler: Found target server!");
 
-        CompletableFuture<Void> pingFuture =
-            server
-                .ping(
-                    PingOptions.builder().version(ProtocolVersion.MAXIMUM_VERSION).build(),
-                    virtualHost)
-                .thenAccept(
-                    ping -> {
-                      if (CONFIG.debug) logger.info("Ping Result: {}", ping);
-                      event.setPing(ping);
-                      pingCache.put(virtualHost, ping);
-                    })
-                .exceptionally(
-                    e -> {
-                      if (CONFIG.debug)
-                        logger.info("Ping to target server failed: {}", e.getMessage());
-                      ServerPing cachedPing = pingCache.get(virtualHost);
-                      if (cachedPing != null) {
-                        event.setPing(
-                            cachedPing
-                                .asBuilder()
-                                .clearSamplePlayers()
-                                .onlinePlayers(0)
-                                .version(
-                                    new ServerPing.Version(
-                                        event.getConnection().getProtocolVersion().getProtocol(),
-                                        event
-                                            .getConnection()
-                                            .getProtocolVersion()
-                                            .getMostRecentSupportedVersion()))
-                                .build());
-                      }
-                      return null;
-                    });
+        CompletableFuture<Void> pingFuture = server
+            .ping(
+                PingOptions.builder().version(ProtocolVersion.MAXIMUM_VERSION).virtualHost(virtualHost).build())
+            .thenAccept(
+                ping -> {
+                  if (CONFIG.debug)
+                    logger.info("Ping Result: {}", ping);
+                  event.setPing(ping);
+                  pingCache.put(virtualHost, ping);
+                })
+            .exceptionally(
+                e -> {
+                  if (CONFIG.debug)
+                    logger.info("Ping to target server failed: {}", e.getMessage());
+                  ServerPing cachedPing = pingCache.get(virtualHost);
+                  if (cachedPing != null) {
+                    event.setPing(
+                        cachedPing
+                            .asBuilder()
+                            .clearSamplePlayers()
+                            .onlinePlayers(0)
+                            .version(
+                                new ServerPing.Version(
+                                    event.getConnection().getProtocolVersion().getProtocol(),
+                                    event
+                                        .getConnection()
+                                        .getProtocolVersion()
+                                        .getMostRecentSupportedVersion()))
+                            .build());
+                  }
+                  return null;
+                });
 
         try {
           pingFuture.get(); // Wait for the ping future to complete
